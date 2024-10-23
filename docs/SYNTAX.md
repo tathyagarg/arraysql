@@ -13,11 +13,12 @@ A collection can be made of each datatype through the following syntax:
 [datatype](max_size)
 ```
 Where `max_size` is the maximum number of elements the collection can hold.
+Datatypes in MaybeSQL always follow a syntax of `LABEL(options)`, where options may be left empty.
 
 ### String Datatypes
 1. `STRING(size)`: A string of size `size` bytes.
 2. `OPTIONS(opt1, ...)`: A object that can have only 1 value from the given options.
-3. `CHAR`: Equivalent to `STRING(1)`
+3. `CHAR()`: Equivalent to `STRING(1)`
 
 ### Numeric Datatypes
 1. `BYTES(size)`: `size` Bytes stored
@@ -30,7 +31,7 @@ Where `max_size` is the maximum number of elements the collection can hold.
 4. `FLOAT(size)`: A float of size `size` bytes 
   - Minimum value for `size` is 4
   - Maximum value for `size` is 32
-5. `TIMESTAMP`: A unix timestamp.
+5. `TIMESTAMP()`: A unix timestamp.
 
 ## Constraints
 1. `EXISTS`: Forces the element to be a non-null value

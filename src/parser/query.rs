@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 #[derive(Debug)]
 pub enum Operator {
     Equal,              // ==
@@ -24,6 +22,7 @@ pub enum QueryType {
     #[default]
     None,
     DatabaseCreation,
+    TableCreation,
 }
 
 #[derive(Default, Debug)]
@@ -31,24 +30,7 @@ pub struct Query {
     pub _type: QueryType,
     pub db_name: String,
     pub table_name: String,
-    pub conditions: Vec<Condition>,
-    pub updates: HashMap<String, String>,
-    pub inserts: Vec<Vec<String>>,
-    pub fields: Vec<String>,
-    pub aliases: HashMap<String, String>,
-}
 
-impl Query {
-    pub fn new() -> Query {
-        Query {
-            _type: QueryType::None,
-            db_name: String::new(),
-            table_name: String::new(),
-            conditions: Vec::new(),
-            updates: HashMap::new(),
-            inserts: Vec::new(),
-            fields: Vec::new(),
-            aliases: HashMap::new(),
-        }
-    }
+    //               DTYPE ,    OPTIONS , IDTFR
+    pub fields: Vec<(String, Vec<String>, String)>,
 }
