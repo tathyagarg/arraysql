@@ -1,6 +1,8 @@
 use std::fs::File;
 use std::io::{self, Write};
 
+mod parser;
+
 fn main() -> io::Result<()> {
     let fp = "output.bin";
 
