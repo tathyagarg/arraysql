@@ -24,6 +24,15 @@ const FINSERT: &str = "FINSERT";
 const FREAD: &str = "FREAD";
 const FDELETE: &str = "FDELETE";
 const LMEM: &str = "LMEM";
+const CONSTRAINED: &str = "CONSTRAINED";
+
+const EXISTS: &str = "EXISTS";
+const UNIQUE: &str = "UNIQUE";
+const PKEY: &str = "PKEY";
+const FKEY: &str = "FKEY";
+const SUCHTHAT: &str = "SUCHTHAT";
+const DEFAULT: &str = "DEFAULT";
+const INC: &str = "INC";
 
 const OPEN_PAREN: &str = "(";
 const CLOSE_PAREN: &str = ")";
@@ -50,6 +59,14 @@ pub const KEYWORDS: &[&str] = &[
     FREAD,
     FDELETE,
     LMEM,
+    CONSTRAINED,
+    EXISTS,
+    UNIQUE,
+    PKEY,
+    FKEY,
+    SUCHTHAT,
+    DEFAULT,
+    INC,
 ];
 
 const DT_STRING: &str = "STRING";
@@ -220,21 +237,106 @@ impl Parser {
                     self.step = match self.pop().to_uppercase().as_str() {
                         SEMICOLON => Step::End,
                         MODE => Step::DefineTableMode,
+                        CONSTRAINED => Step::DefineConstraintOpenParen,
                         found => panic!("Unexpected token {}", found),
                     };
                 }
                 Step::DefineTableMode => {
                     let token = self.pop().to_uppercase();
-                    if [FINSERT, FREAD, FDELETE, LMEM].contains(&token.as_str()) {
-                        self.query_data.modes.push(token);
-                    } else {
+                    if ![FINSERT, FREAD, FDELETE, LMEM].contains(&token.as_str()) {
                         panic!("Expected a mode, found {}", token);
                     }
 
+                    self.query_data.modes.push(token);
                     self.step = match self.peek().as_str() {
                         SEMICOLON => Step::End,
                         FINSERT | FREAD | FDELETE | LMEM => Step::DefineTableMode,
                         token => panic!("Expected another mode or semicolon, found {}", token),
+                    }
+                }
+                Step::DefineConstraintOpenParen => {
+                    let token = self.pop();
+                    if token != OPEN_PAREN {
+                        panic!("Expected open paren, found {}", token);
+                    }
+
+                    self.step = Step::DefineConstraintOn;
+                }
+                Step::DefineConstraintOn => {
+                    let token = self.pop();
+                    if token != ON {
+                        panic!("Expected ON, found {}", token);
+                    }
+
+                    self.step = Step::DefineConstraintIdentifier;
+                }
+                Step::DefineConstraintIdentifier => {
+                    let token = self.pop_identifier();
+                    self.query_data.constraints.push((token, Vec::new()));
+                    self.step = Step::DefineConstraint;
+                }
+                Step::DefineConstraint => {
+                    let token = self.pop();
+                    if ![EXISTS, UNIQUE, PKEY, FKEY, SUCHTHAT, DEFAULT, INC]
+                        .contains(&token.as_str())
+                    {
+                        panic!("Expected a constraint, found {}", token);
+                    }
+                    let (_, ref mut constraints) = self.query_data.constraints.last_mut().unwrap();
+                    constraints.push((token, Vec::new()));
+
+                    self.step = match self.peek().as_str() {
+                        OPEN_PAREN => Step::DefineConstraintOptionOpenParen,
+                        EXISTS | UNIQUE | PKEY | FKEY | SUCHTHAT | DEFAULT | INC => {
+                            Step::DefineConstraint
+                        }
+                        COMMA => {
+                            self.pop();
+                            Step::DefineConstraintOn
+                        }
+                        CLOSE_PAREN => Step::DefineConstraintCloseParen,
+                        _ => panic!(),
+                    }
+                }
+                Step::DefineConstraintOptionOpenParen => {
+                    self.pop();
+                    self.step = Step::DefineConstraintOption;
+                }
+                Step::DefineConstraintOption => {
+                    let token = self.peek();
+                    self.step = match token.as_str() {
+                        CLOSE_PAREN => Step::DefineConstraintOptionCloseParen,
+                        _ => {
+                            self.pop();
+                            let (_, ref mut constraints) =
+                                self.query_data.constraints.last_mut().unwrap();
+                            let (_, ref mut constraint_options) = constraints.last_mut().unwrap();
+                            constraint_options.push(token);
+                            Step::DefineConstraintOption
+                        }
+                    }
+                }
+                Step::DefineConstraintOptionCloseParen => {
+                    self.pop();
+                    self.step = match self.peek().as_str() {
+                        COMMA => {
+                            self.pop();
+                            Step::DefineConstraintOn
+                        }
+                        EXISTS | UNIQUE | PKEY | FKEY | SUCHTHAT | DEFAULT | INC => {
+                            Step::DefineConstraint
+                        }
+                        CLOSE_PAREN => Step::DefineConstraintCloseParen,
+                        found_token => {
+                            panic!("Expected comma or constraint, found {}", found_token)
+                        }
+                    }
+                }
+                Step::DefineConstraintCloseParen => {
+                    self.pop();
+                    self.step = match self.pop().as_str() {
+                        MODE => Step::DefineTableMode,
+                        found_token => panic!("Expected mode or end query, found {}", found_token),
                     }
                 }
                 Step::End => return,

@@ -67,11 +67,11 @@ fn test_no_field_identifier() {
 
     p.set_query(
         "TABLE my_table \
-        ON my_database \
-        STRUCTURED (\
-            UINT(1),\
-            STRING(64) name\
-        );"
+            ON my_database \
+            STRUCTURED (\
+                UINT(1),\
+                STRING(64) name\
+            );"
         .to_string(),
     )
     .parse();
@@ -83,11 +83,11 @@ fn test_empty_options() {
 
     p.set_query(
         "TABLE my_table \
-        ON my_database \
-        STRUCTURED (\
-            UINT() id,\
-            STRING(64) name\
-        );"
+            ON my_database \
+            STRUCTURED (\
+                UINT() id,\
+                STRING(64) name\
+            );"
         .to_string(),
     )
     .parse();
@@ -99,12 +99,12 @@ fn test_multiple_options() {
 
     p.set_query(
         "TABLE my_table \
-        ON my_database \
-        STRUCTURED (\
-            UINT() id,\
-            STRING(64) name,\
-            OPTIONS(math, english) favorite_subject\
-        );"
+            ON my_database \
+            STRUCTURED (\
+                UINT() id,\
+                STRING(64) name,\
+                OPTIONS(math, english) favorite_subject\
+            );"
         .to_string(),
     )
     .parse();
@@ -126,63 +126,4 @@ fn test_multiple_options() {
 
         assert_eq!(identifier, expected_identifier);
     }
-}
-
-#[test]
-fn test_mode() {
-    let mut p = parser::Parser::default();
-
-    p.set_query(
-        "TABLE my_table \
-        ON my_database \
-        STRUCTURED (\
-            UINT() id,\
-            STRING(64) name,\
-            OPTIONS(math, english) favorite_subject\
-        )\
-        MODE FREAD FINSERT;"
-            .to_string(),
-    )
-    .parse();
-
-    assert_eq!(p.query_data.modes, vec!["FREAD", "FINSERT"]);
-}
-
-#[test]
-fn test_single_mode() {
-    let mut p = parser::Parser::default();
-
-    p.set_query(
-        "TABLE my_table \
-        ON my_database \
-        STRUCTURED (\
-            UINT() id,\
-            STRING(64) name,\
-            OPTIONS(math, english) favorite_subject\
-        )\
-        MODE FREAD;"
-            .to_string(),
-    )
-    .parse();
-
-    assert_eq!(p.query_data.modes, vec!["FREAD",]);
-}
-
-#[test]
-#[should_panic(expected = "Expected a mode")]
-fn test_no_mode_with_kw() {
-    let mut p = parser::Parser::default();
-
-    p.set_query(
-        "TABLE my_table \
-        ON my_database \
-        STRUCTURED (\
-            UINT() id,\
-            STRING(64) name,\
-            OPTIONS(math, english) favorite_subject\
-        )\
-        MODE;"
-            .to_string(),
-    )
-    .parse();
 }

@@ -1,21 +1,5 @@
-#[derive(Debug)]
-pub enum Operator {
-    Equal,              // ==
-    NotEqual,           // !=
-    GreaterThan,        // >
-    LesserThan,         // <
-    GreaterThanEqualTo, // >=
-    LesserThanEqualTo,  // <=
-}
-
-#[derive(Debug)]
-pub struct Condition {
-    pub operand1: String,
-    pub operand1isfield: bool,
-    pub operator: Operator,
-    pub operand2: String,
-    pub operand2isfield: bool,
-}
+//                      FIELD ,      CONSTR,   OPTIONS
+type Constraints = Vec<(String, Vec<(String, Vec<String>)>)>;
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub enum QueryType {
@@ -34,4 +18,5 @@ pub struct Query {
     //               DTYPE ,    OPTIONS , IDTFR
     pub fields: Vec<(String, Vec<String>, String)>,
     pub modes: Vec<String>,
+    pub constraints: Constraints,
 }

@@ -77,29 +77,29 @@ Tables are stored in seperate files. They are created with:
 ```
 TABLE table_name ON database_name STRUCTURED (
     [DATATYPE field_name,]+
-    [CONSTRAINED (
-        [ON field_name constraint]+
-    )]-
-) [MODE [[mode1]+]-;
+) [CONSTRAINED (
+    [ON field_name constraint]+
+)]-
+[MODE [[mode1]+]-;
 
 # Example
 TABLE orders ON my_database STRUCTURED (
     UINT(8) order_id,
     STRING(255) item_name,
-    CONSTRAINED (
-        ON order_id EXISTS PKEY INC,
-        ON item_name EXISTS
-    )
-) MODE FINSERT LMEM;
+) CONSTRAINED (
+    ON order_id EXISTS PKEY INC,
+    ON item_name EXISTS
+)
+MODE FINSERT LMEM;
 
 TABLE users ON my_database STRUCTURED (
     UINT(8) user_id,
     [UINT(8)](U32MAX) orders_placed,
-    CONSTRAINED (
-        ON user_id EXISTS PKEY INC,
-        ON orders_placed FKEY (ON orders) DEFAULT (AUTO)
-    )
-) MODE FREAD FDELETE;
+) CONSTRAINED (
+    ON user_id EXISTS PKEY INC,
+    ON orders_placed FKEY (ON orders) DEFAULT (AUTO)
+)
+MODE FREAD FDELETE;
 ```
 Elements in a collection datatype can be constrained by treating the collection as the field being constraint. The specified constrains will be applied to its items.
 
