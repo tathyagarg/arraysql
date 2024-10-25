@@ -65,8 +65,16 @@ fn test_no_fields() {
 fn test_no_field_identifier() {
     let mut p = parser::Parser::default();
 
-    p.set_query("TABLE my_table ON my_database STRUCTURED (UINT(1), STRING(64) name);".to_string())
-        .parse();
+    p.set_query(
+        "TABLE my_table \
+        ON my_database \
+        STRUCTURED (\
+            UINT(1),\
+            STRING(64) name\
+        );"
+        .to_string(),
+    )
+    .parse();
 }
 
 #[test]
@@ -74,7 +82,13 @@ fn test_empty_options() {
     let mut p = parser::Parser::default();
 
     p.set_query(
-        "TABLE my_table ON my_database STRUCTURED (UINT() id, STRING(64) name);".to_string(),
+        "TABLE my_table \
+        ON my_database \
+        STRUCTURED (\
+            UINT() id,\
+            STRING(64) name\
+        );"
+        .to_string(),
     )
     .parse();
 }
@@ -84,7 +98,14 @@ fn test_multiple_options() {
     let mut p = parser::Parser::default();
 
     p.set_query(
-        "TABLE my_table ON my_database STRUCTURED (UINT() id, STRING(64) name, OPTIONS(math, english) favorite_subject);".to_string(),
+        "TABLE my_table \
+        ON my_database \
+        STRUCTURED (\
+            UINT() id,\
+            STRING(64) name,\
+            OPTIONS(math, english) favorite_subject\
+        );"
+        .to_string(),
     )
     .parse();
 
@@ -145,4 +166,23 @@ fn test_single_mode() {
     .parse();
 
     assert_eq!(p.query_data.modes, vec!["FREAD",]);
+}
+
+#[test]
+#[should_panic(expected = "Expected a mode")]
+fn test_no_mode_with_kw() {
+    let mut p = parser::Parser::default();
+
+    p.set_query(
+        "TABLE my_table \
+        ON my_database \
+        STRUCTURED (\
+            UINT() id,\
+            STRING(64) name,\
+            OPTIONS(math, english) favorite_subject\
+        )\
+        MODE;"
+            .to_string(),
+    )
+    .parse();
 }
