@@ -51,6 +51,18 @@ MaybeSQL defines the following constants:
 3. `U32MAX`: 4294967295
 4. `U64MAX`: 18446744073709551615
 
+## Modes
+MaybeSQL uses 2 sets of 2 modes each to control which action you want to place more importance on:
+Group 1:
+1. `FINSERT`: Faster inserts
+2. `FREAD`: Faster reads
+Group 2:
+3. `FDELETE`: Faster deletions
+4. `LMEM`: Lower memory usage
+
+1 mode can be used from each group, resulting in 4 different configurations.
+These modes are defined when you make a table.
+
 ## Creating Databases
 Databases are stored in the form of directories, and can be created with:
 ```
@@ -68,7 +80,7 @@ TABLE table_name ON database_name STRUCTURED (
     [CONSTRAINED (
         [ON field_name constraint]+
     )]-
-);
+) [MODE [[mode1]+]-;
 
 # Example
 TABLE orders ON my_database STRUCTURED (
@@ -78,7 +90,7 @@ TABLE orders ON my_database STRUCTURED (
         ON order_id EXISTS PKEY INC,
         ON item_name EXISTS
     )
-);
+) MODE FINSERT LMEM;
 
 TABLE users ON my_database STRUCTURED (
     UINT(8) user_id,
@@ -87,7 +99,7 @@ TABLE users ON my_database STRUCTURED (
         ON user_id EXISTS PKEY INC,
         ON orders_placed FKEY (ON orders) DEFAULT (AUTO)
     )
-);
+) MODE FREAD FDELETE;
 ```
 Elements in a collection datatype can be constrained by treating the collection as the field being constraint. The specified constrains will be applied to its items.
 

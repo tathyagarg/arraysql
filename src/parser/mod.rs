@@ -15,30 +15,42 @@ pub struct Parser {
     pub step: Step,
 }
 
+const DATABASE: &str = "DATABASE";
+const TABLE: &str = "TABLE";
+const ON: &str = "ON";
+const STRUCTURED: &str = "STRUCTURED";
+const MODE: &str = "MODE";
+const FINSERT: &str = "FINSERT";
+const FREAD: &str = "FREAD";
+const FDELETE: &str = "FDELETE";
+const LMEM: &str = "LMEM";
+
+const OPEN_PAREN: &str = "(";
+const CLOSE_PAREN: &str = ")";
+const COMMA: &str = ",";
+const SEMICOLON: &str = ";";
+
 pub const KEYWORDS: &[&str] = &[
-    "(",
-    ")",
+    OPEN_PAREN,
+    CLOSE_PAREN,
     "=",
     ">",
     "<",
     "!=",
     ">=",
     "<=",
-    ",",
-    "DATABASE",
-    "TABLE",
-    "ON",
-    "STRUCTURED",
+    COMMA,
+    SEMICOLON,
+    DATABASE,
+    TABLE,
+    ON,
+    STRUCTURED,
+    MODE,
+    FINSERT,
+    FREAD,
+    FDELETE,
+    LMEM,
 ];
-
-const DATABASE: &str = "DATABASE";
-const TABLE: &str = "TABLE";
-const ON: &str = "ON";
-const STRUCTURED: &str = "STRUCTURED";
-
-const OPEN_PAREN: &str = "(";
-const CLOSE_PAREN: &str = ")";
-const COMMA: &str = ",";
 
 const DT_STRING: &str = "STRING";
 const DT_OPTIONS: &str = "OPTIONS";
@@ -159,7 +171,8 @@ impl Parser {
 
                     let next_token = self.peek();
                     self.step = if next_token == CLOSE_PAREN {
-                        Step::DefineFieldDatatypeCloseParen
+                        self.pop();
+                        Step::DefineFieldIdentifier
                     } else {
                         Step::DefineFieldDatatypeOption
                     }
@@ -169,20 +182,12 @@ impl Parser {
                     let (_, ref mut options, _) = self.query_data.fields.last_mut().unwrap();
                     options.push(token);
 
-                    let next_token = self.peek();
+                    let next_token = self.pop();
                     self.step = match next_token.as_str() {
-                        CLOSE_PAREN => Step::DefineFieldDatatypeCloseParen,
-                        COMMA => Step::DefineFieldDatatypeComma,
+                        CLOSE_PAREN => Step::DefineFieldIdentifier,
+                        COMMA => Step::DefineFieldDatatypeOption,
                         _ => panic!("Expected close paren ')' or comma ',', got {}", next_token),
                     }
-                }
-                Step::DefineFieldDatatypeComma => {
-                    self.pop();
-                    self.step = Step::DefineFieldDatatypeOption;
-                }
-                Step::DefineFieldDatatypeCloseParen => {
-                    self.pop();
-                    self.step = Step::DefineFieldIdentifier;
                 }
                 Step::DefineFieldIdentifier => {
                     let token = self.pop_identifier();
@@ -204,19 +209,33 @@ impl Parser {
                     let (_, _, ref mut identifier) = self.query_data.fields.last_mut().unwrap();
                     *identifier = token;
 
-                    let next_token = self.peek();
+                    let next_token = self.pop();
                     self.step = match next_token.as_str() {
                         CLOSE_PAREN => Step::DefineTableStructureCloseParen,
-                        COMMA => Step::DefineFieldComma,
+                        COMMA => Step::DefineFieldDatatype,
                         _ => panic!("Expected close paren ')' or comma ',', got {}", next_token),
                     }
                 }
-                Step::DefineFieldComma => {
-                    self.pop();
-                    self.step = Step::DefineFieldDatatype;
-                }
                 Step::DefineTableStructureCloseParen => {
-                    self.step = Step::End;
+                    self.step = match self.pop().to_uppercase().as_str() {
+                        SEMICOLON => Step::End,
+                        MODE => Step::DefineTableMode,
+                        found => panic!("Unexpected token {}", found),
+                    };
+                }
+                Step::DefineTableMode => {
+                    let token = self.pop().to_uppercase();
+                    if [FINSERT, FREAD, FDELETE, LMEM].contains(&token.as_str()) {
+                        self.query_data.modes.push(token);
+                    } else {
+                        panic!("Expected a mode, found {}", token);
+                    }
+
+                    self.step = match self.peek().as_str() {
+                        SEMICOLON => Step::End,
+                        FINSERT | FREAD | FDELETE | LMEM => Step::DefineTableMode,
+                        token => panic!("Expected another mode or semicolon, found {}", token),
+                    }
                 }
                 Step::End => return,
             }

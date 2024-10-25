@@ -5,7 +5,7 @@ mod parser;
 fn main() {
     let mut p = parser::Parser::default();
     p.set_query(String::from(
-        "TABLE sigma ON dbb STRUCTURED (UINT(skibidi) skibidi);",
+        "TABLE sigma ON dbb STRUCTURED (UINT(skibidi) skibidi) MODE FREAD FDELETE;",
     ));
     p.parse();
 

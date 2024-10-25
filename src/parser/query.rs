@@ -33,4 +33,5 @@ pub struct Query {
 
     //               DTYPE ,    OPTIONS , IDTFR
     pub fields: Vec<(String, Vec<String>, String)>,
+    pub modes: Vec<String>,
 }

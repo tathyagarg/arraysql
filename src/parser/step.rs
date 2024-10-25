@@ -13,11 +13,9 @@ pub enum Step {
     DefineFieldDatatype,
     DefineFieldDatatypeOpenParen,
     DefineFieldDatatypeOption,
-    DefineFieldDatatypeComma,
-    DefineFieldDatatypeCloseParen,
     DefineFieldIdentifier,
-    DefineFieldComma,
     DefineTableStructureCloseParen,
+    DefineTableMode,
     End,
 }
 
@@ -34,11 +32,9 @@ impl fmt::Display for Step {
             Step::DefineFieldDatatype => write!(f, "DefineFieldDatatype"),
             Step::DefineFieldDatatypeOpenParen => write!(f, "DefineFieldDatatypeOpenParen"),
             Step::DefineFieldDatatypeOption => write!(f, "DefineFieldDatatypeOption"),
-            Step::DefineFieldDatatypeComma => write!(f, "DefineFieldDatatypeComma"),
-            Step::DefineFieldDatatypeCloseParen => write!(f, "DefineFieldDatatypeCloseParen"),
             Step::DefineFieldIdentifier => write!(f, "DefineFieldIdentifier"),
-            Step::DefineFieldComma => write!(f, "DefineFieldComma"),
             Step::DefineTableStructureCloseParen => write!(f, "DefineTableStructureCloseParen"),
+            Step::DefineTableMode => write!(f, "DefineTableMode"),
             Step::End => write!(f, "End"),
         }
     }
