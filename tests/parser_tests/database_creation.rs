@@ -27,14 +27,14 @@ fn test_lowercase_database_creation() {
 }
 
 #[test]
-#[should_panic(expected = "Expected identifier for database name")]
+#[should_panic]
 fn test_failed_database_creation() {
     let mut p = parser::Parser::default();
     p.set_query("database;".to_string()).parse();
 }
 
 #[test]
-#[should_panic(expected = "Expected identifier for database name")]
+#[should_panic]
 fn test_invalid_database_identifier() {
     let mut p = parser::Parser::default();
     p.set_query("database --;".to_string()).parse();

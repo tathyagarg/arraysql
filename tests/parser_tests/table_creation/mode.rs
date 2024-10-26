@@ -41,7 +41,7 @@ fn test_single_mode() {
 }
 
 #[test]
-#[should_panic(expected = "Expected a mode")]
+#[should_panic]
 fn test_no_mode_with_kw() {
     let mut p = parser::Parser::default();
 

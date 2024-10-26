@@ -106,11 +106,9 @@ Elements in a collection datatype can be constrained by treating the collection 
 ## Inserting data into tables
 Data is inserted into tables with:
 ```
-INSERT STRUCTURED ([value,]+) ON table_name ON database_name;
+INSERT STRUCTURED ([value,]+) ON table_name STRUCTURED ([field,]+) ON database_name;
 
 # Example
-INSERT STRUCTURED (...) ON users STRUCTURED (...) ON my_database;
-
 INSERT STRUCTURED ("Ice cream") ON orders STRUCTURED (item_name) ON my_database;
 INSERT STRUCTURED ([1]) ON users ON STRUCTURED (orders_placed) ON my_database;
 ```

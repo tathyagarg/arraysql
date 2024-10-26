@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 //                      FIELD ,      CONSTR,   OPTIONS
 type Constraints = Vec<(String, Vec<(String, Vec<String>)>)>;
 
@@ -25,6 +23,6 @@ pub struct Query {
     pub constraints: Constraints,
     //
     // ============ Insertions ============
-    pub inserted_data: Vec<String>,
-    pub insertion_map: HashMap<String, String>,
+    pub inserted_value: Vec<String>,
+    pub inserted_field: Vec<String>,
 }

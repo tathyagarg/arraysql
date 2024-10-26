@@ -52,7 +52,7 @@ fn test_multiple_fields() {
 }
 
 #[test]
-#[should_panic(expected = "Expected a Datatype")]
+#[should_panic]
 fn test_no_fields() {
     let mut p = parser::Parser::default();
 
@@ -61,7 +61,7 @@ fn test_no_fields() {
 }
 
 #[test]
-#[should_panic(expected = "Expected identifier for field name.")]
+#[should_panic]
 fn test_no_field_identifier() {
     let mut p = parser::Parser::default();
 

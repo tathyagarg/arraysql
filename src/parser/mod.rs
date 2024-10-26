@@ -93,6 +93,20 @@ const DATATYPES: [&str; 8] = [
 ];
 
 impl Parser {
+    fn ensure_token(&self, token: String, expected: &str) -> u8 {
+        if token != expected {
+            panic!(
+                "Unexpected token found:\n\tFound   : {:?}\n\tExpected: {:?}\nQuery: {}\n       {}^{}",
+                token,
+                expected,
+                self.query,
+                (0..(self.location)).map(|_| " ").collect::<String>(),
+                (0..(self.query.len() - self.location)).map(|_| " ").collect::<String>()
+            );
+        }
+        0
+    }
+
     pub fn reset(&mut self) {
         *self = Parser::default();
     }
@@ -118,10 +132,17 @@ impl Parser {
                     }
                     INSERT => {
                         self.query_data._type = QueryType::Insert;
-                        Step::InsertValueStructure
+                        {
+                            let token = self.pop();
+                            self.ensure_token(token, STRUCTURED);
+
+                            let token = self.pop();
+                            self.ensure_token(token, OPEN_PAREN);
+                            Step::InsertValueIdentifier
+                        }
                     }
                     _ => {
-                        panic!("Invalid token found {}", self.peek());
+                        panic!("Invalid token found {:?}", self.peek());
                     }
                 },
                 Step::DefineDatabaseName => {
@@ -131,7 +152,12 @@ impl Parser {
                     }
 
                     self.query_data.db_name = identifier;
-                    Step::End
+
+                    {
+                        let token = self.pop();
+                        self.ensure_token(token, SEMICOLON);
+                        Step::End
+                    }
                 }
                 Step::DefineTableName => {
                     let identifier = self.pop_identifier();
@@ -140,14 +166,12 @@ impl Parser {
                     }
 
                     self.query_data.table_name = identifier;
-                    Step::DefineTableOn
-                }
-                Step::DefineTableOn => {
-                    let token = self.pop();
-                    if token != ON {
-                        panic!("Expected ON, got {}", token);
+                    {
+                        // Ensure ON after table name
+                        let token = self.pop();
+                        self.ensure_token(token, ON);
+                        Step::DefineTableDatabase
                     }
-                    Step::DefineTableDatabase
                 }
                 Step::DefineTableDatabase => {
                     let identifier = self.pop_identifier();
@@ -156,49 +180,36 @@ impl Parser {
                     }
 
                     self.query_data.db_name = identifier;
-                    Step::DefineTableStructure
-                }
-                Step::DefineTableStructure => {
-                    let token = self.pop();
-                    if token != STRUCTURED {
-                        panic!("Expected STRUCTURED, got {}", token);
-                    }
-                    Step::DefineTableStructureOpenParen
-                }
-                Step::DefineTableStructureOpenParen => {
-                    let open_paren = self.pop();
-                    if open_paren != OPEN_PAREN {
-                        panic!("Expected open parenthesis, found {}", open_paren);
-                    }
+                    {
+                        // Ensure 'STRUCTURED ('
+                        let token = self.pop();
+                        self.ensure_token(token, STRUCTURED);
 
-                    Step::DefineFieldDatatype
+                        let token = self.pop();
+                        self.ensure_token(token, OPEN_PAREN);
+                        Step::DefineFieldDatatype
+                    }
                 }
                 Step::DefineFieldDatatype => {
                     let token = self.pop();
                     if !DATATYPES.contains(&token.as_str()) {
-                        panic!("Expected a Datatype, found {}", token);
+                        panic!("Expected a Datatype, found {:?}", token);
                     };
 
                     self.query_data
                         .fields
                         .push((token, Vec::new(), String::new()));
-                    Step::DefineFieldDatatypeOpenParen
-                }
-                Step::DefineFieldDatatypeOpenParen => {
-                    let token = self.pop();
-                    if token != OPEN_PAREN {
-                        panic!(
-                            "Expected open paren after datatype for options, found {}",
-                            token
-                        );
-                    }
+                    {
+                        let token = self.pop();
+                        self.ensure_token(token, OPEN_PAREN);
 
-                    let next_token = self.peek();
-                    if next_token == CLOSE_PAREN {
-                        self.pop();
-                        Step::DefineFieldIdentifier
-                    } else {
-                        Step::DefineFieldDatatypeOption
+                        match self.peek().as_str() {
+                            CLOSE_PAREN => {
+                                self.pop();
+                                Step::DefineFieldIdentifier
+                            }
+                            _ => Step::DefineFieldDatatypeOption,
+                        }
                     }
                 }
                 Step::DefineFieldDatatypeOption => {
@@ -210,7 +221,10 @@ impl Parser {
                     match next_token.as_str() {
                         CLOSE_PAREN => Step::DefineFieldIdentifier,
                         COMMA => Step::DefineFieldDatatypeOption,
-                        _ => panic!("Expected close paren ')' or comma ',', got {}", next_token),
+                        _ => panic!(
+                            "Expected close paren ')' or comma ',', got {:?}",
+                            next_token
+                        ),
                     }
                 }
                 Step::DefineFieldIdentifier => {
@@ -237,42 +251,39 @@ impl Parser {
                     match next_token.as_str() {
                         CLOSE_PAREN => Step::DefineTableStructureCloseParen,
                         COMMA => Step::DefineFieldDatatype,
-                        _ => panic!("Expected close paren ')' or comma ',', got {}", next_token),
+                        _ => panic!(
+                            "Expected close paren ')' or comma ',', got {:?}",
+                            next_token
+                        ),
                     }
                 }
                 Step::DefineTableStructureCloseParen => match self.pop().to_uppercase().as_str() {
                     SEMICOLON => Step::End,
                     MODE => Step::DefineTableMode,
-                    CONSTRAINED => Step::DefineConstraintOpenParen,
-                    found => panic!("Unexpected token {}", found),
+                    CONSTRAINED => {
+                        let token = self.pop();
+                        self.ensure_token(token, OPEN_PAREN);
+                        Step::DefineConstraintOn
+                    }
+                    found => panic!("Unexpected token {:?}", found),
                 },
                 Step::DefineTableMode => {
                     let token = self.pop();
                     if ![FADD, FREAD, FDELETE, LMEM].contains(&token.as_str()) {
-                        panic!("Expected a mode, found {}", token);
+                        panic!("Expected a mode, found {:?}", token);
                     }
 
                     self.query_data.modes.push(token);
                     match self.peek().as_str() {
                         SEMICOLON => Step::End,
                         FADD | FREAD | FDELETE | LMEM => Step::DefineTableMode,
-                        token => panic!("Expected another mode or semicolon, found {}", token),
+                        token => panic!("Expected another mode or semicolon, found {:?}", token),
                     }
-                }
-                Step::DefineConstraintOpenParen => {
-                    let token = self.pop();
-                    if token != OPEN_PAREN {
-                        panic!("Expected open paren, found {}", token);
-                    }
-
-                    Step::DefineConstraintOn
                 }
                 Step::DefineConstraintOn => {
+                    // This has a good number of steps referencing back to it, no need to delete
                     let token = self.pop();
-                    if token != ON {
-                        panic!("Expected ON, found {}", token);
-                    }
-
+                    self.ensure_token(token, ON);
                     Step::DefineConstraintIdentifier
                 }
                 Step::DefineConstraintIdentifier => {
@@ -285,7 +296,7 @@ impl Parser {
                     if ![EXISTS, UNIQUE, PKEY, FKEY, SUCHTHAT, DEFAULT, INC]
                         .contains(&token.as_str())
                     {
-                        panic!("Expected a constraint, found {}", token);
+                        panic!("Expected a constraint, found {:?}", token);
                     }
                     let (_, ref mut constraints) = self.query_data.constraints.last_mut().unwrap();
                     constraints.push((token, Vec::new()));
@@ -330,50 +341,82 @@ impl Parser {
                         EXISTS | UNIQUE | PKEY | FKEY | SUCHTHAT | DEFAULT | INC => {
                             Step::DefineConstraint
                         }
-                        CLOSE_PAREN => Step::DefineConstraintCloseParen,
+                        CLOSE_PAREN => {
+                            self.pop();
+                            Step::DefineConstraintCloseParen
+                        }
                         found_token => {
-                            panic!("Expected comma or constraint, found {}", found_token)
+                            panic!("Expected comma or constraint, found {:?}", found_token)
                         }
                     }
                 }
                 Step::DefineConstraintCloseParen => {
-                    self.pop();
-                    match self.pop().as_str() {
-                        MODE => Step::DefineTableMode,
-                        found_token => panic!("Expected mode or end query, found {}", found_token),
-                    }
-                }
-                Step::InsertValueStructure => {
                     let token = self.pop();
-                    if token != STRUCTURED {
-                        panic!("Expected keyword structured, found {}", token);
-                    }
-
-                    Step::InsertValueStructureOpenParen
-                }
-                Step::InsertValueStructureOpenParen => {
-                    let token = self.pop();
-                    if token != OPEN_PAREN {
-                        panic!("Expected open paren, found {}", token);
-                    }
-
-                    Step::InsertValueIdentifier
+                    self.ensure_token(token, MODE);
+                    Step::DefineTableMode
                 }
                 Step::InsertValueIdentifier => {
                     let token = self.pop_string_or_identifier();
-                    self.query_data.inserted_data.push(token);
+                    println!("{}", token);
+                    self.query_data.inserted_value.push(token);
 
                     match self.peek().as_str() {
-                        CLOSE_PAREN => Step::InsertValueStructureCloseParen,
+                        CLOSE_PAREN => {
+                            let token = self.pop();
+                            self.ensure_token(token, CLOSE_PAREN);
+
+                            let token = self.pop();
+                            self.ensure_token(token, ON);
+
+                            Step::InsertTable
+                        }
                         COMMA => {
                             self.pop();
                             Step::InsertValueIdentifier
                         }
-                        found_token => panic!("Unexpected token {}", found_token),
+                        found_token => panic!("Unexpected token {:?}", found_token),
                     }
                 }
-                Step::InsertValueStructureCloseParen => {
-                    // TODO - Add logic for what happens after initial STRUCTURED.
+                Step::InsertTable => {
+                    let token = self.pop_identifier();
+                    self.query_data.table_name = token;
+
+                    {
+                        let token = self.pop();
+                        self.ensure_token(token, STRUCTURED);
+
+                        let token = self.pop();
+                        self.ensure_token(token, OPEN_PAREN);
+                        Step::InsertFieldIdentifier
+                    }
+                }
+                Step::InsertFieldIdentifier => {
+                    let token = self.pop_string_or_identifier();
+                    self.query_data.inserted_field.push(token);
+
+                    match self.peek().as_str() {
+                        CLOSE_PAREN => {
+                            let token = self.pop();
+                            self.ensure_token(token, CLOSE_PAREN);
+
+                            let token = self.pop();
+                            self.ensure_token(token, ON);
+
+                            Step::InsertDatabase
+                        }
+                        COMMA => {
+                            self.pop();
+                            Step::InsertFieldIdentifier
+                        }
+                        found_token => panic!("Unexpected token {:?}", found_token),
+                    }
+                }
+                Step::InsertDatabase => {
+                    let token = self.pop_identifier();
+                    self.query_data.db_name = token;
+
+                    let token = self.pop();
+                    self.ensure_token(token, SEMICOLON);
                     Step::End
                 }
                 Step::End => return,
@@ -444,6 +487,9 @@ impl Parser {
     }
 
     fn peek_string_or_indentifier_with_length(&self) -> (String, usize) {
+        if self.query.chars().nth(self.location).unwrap() == '[' {
+            return self.peek_array_with_length();
+        }
         if self.query.chars().nth(self.location).unwrap() == '\'' {
             return self.peek_string_with_length();
         }
@@ -459,6 +505,25 @@ impl Parser {
 
         for i in (self.location + 1)..(self.query.len()) {
             if self.query.chars().nth(i).unwrap() == '\''
+                && self.query.chars().nth(i - 1).unwrap() != '\\'
+            {
+                return (
+                    self.query[self.location + 1..i].to_string(),
+                    self.query[self.location + 1..i].len() + 2,
+                );
+            }
+        }
+        (String::new(), 0)
+    }
+
+    fn peek_array_with_length(&self) -> (String, usize) {
+        if self.query.len() < self.location || self.query.chars().nth(self.location).unwrap() != '['
+        {
+            return (String::new(), 0);
+        }
+
+        for i in (self.location + 1)..(self.query.len()) {
+            if self.query.chars().nth(i).unwrap() == ']'
                 && self.query.chars().nth(i - 1).unwrap() != '\\'
             {
                 return (
