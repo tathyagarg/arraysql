@@ -17,10 +17,12 @@ pub struct Parser {
 
 const DATABASE: &str = "DATABASE";
 const TABLE: &str = "TABLE";
+const INSERT: &str = "INSERT";
+
 const ON: &str = "ON";
 const STRUCTURED: &str = "STRUCTURED";
 const MODE: &str = "MODE";
-const FINSERT: &str = "FINSERT";
+const FADD: &str = "FADD";
 const FREAD: &str = "FREAD";
 const FDELETE: &str = "FDELETE";
 const LMEM: &str = "LMEM";
@@ -43,19 +45,20 @@ pub const KEYWORDS: &[&str] = &[
     OPEN_PAREN,
     CLOSE_PAREN,
     "=",
+    "<=",
+    ">=",
+    "!=",
     ">",
     "<",
-    "!=",
-    ">=",
-    "<=",
     COMMA,
     SEMICOLON,
     DATABASE,
     TABLE,
+    INSERT,
     ON,
     STRUCTURED,
     MODE,
-    FINSERT,
+    FADD,
     FREAD,
     FDELETE,
     LMEM,
@@ -102,16 +105,20 @@ impl Parser {
     pub fn parse(&mut self) {
         self.step = Step::Start;
 
-        while self.location < self.query.len() {
-            match self.step {
-                Step::Start => match self.pop().to_uppercase().as_str() {
+        while self.location < self.query.len() && self.step != Step::End {
+            self.step = match self.step {
+                Step::Start => match self.pop().as_str() {
                     DATABASE => {
                         self.query_data._type = QueryType::DatabaseCreation;
-                        self.step = Step::DefineDatabaseName;
+                        Step::DefineDatabaseName
                     }
                     TABLE => {
                         self.query_data._type = QueryType::TableCreation;
-                        self.step = Step::DefineTableName;
+                        Step::DefineTableName
+                    }
+                    INSERT => {
+                        self.query_data._type = QueryType::Insert;
+                        Step::InsertValueStructure
                     }
                     _ => {
                         panic!("Invalid token found {}", self.peek());
@@ -124,7 +131,7 @@ impl Parser {
                     }
 
                     self.query_data.db_name = identifier;
-                    self.step = Step::End;
+                    Step::End
                 }
                 Step::DefineTableName => {
                     let identifier = self.pop_identifier();
@@ -133,14 +140,14 @@ impl Parser {
                     }
 
                     self.query_data.table_name = identifier;
-                    self.step = Step::DefineTableOn;
+                    Step::DefineTableOn
                 }
                 Step::DefineTableOn => {
-                    let token = self.pop().to_uppercase();
+                    let token = self.pop();
                     if token != ON {
                         panic!("Expected ON, got {}", token);
                     }
-                    self.step = Step::DefineTableDatabase;
+                    Step::DefineTableDatabase
                 }
                 Step::DefineTableDatabase => {
                     let identifier = self.pop_identifier();
@@ -149,14 +156,14 @@ impl Parser {
                     }
 
                     self.query_data.db_name = identifier;
-                    self.step = Step::DefineTableStructure;
+                    Step::DefineTableStructure
                 }
                 Step::DefineTableStructure => {
-                    let token = self.pop().to_uppercase();
+                    let token = self.pop();
                     if token != STRUCTURED {
                         panic!("Expected STRUCTURED, got {}", token);
                     }
-                    self.step = Step::DefineTableStructureOpenParen;
+                    Step::DefineTableStructureOpenParen
                 }
                 Step::DefineTableStructureOpenParen => {
                     let open_paren = self.pop();
@@ -164,10 +171,10 @@ impl Parser {
                         panic!("Expected open parenthesis, found {}", open_paren);
                     }
 
-                    self.step = Step::DefineFieldDatatype;
+                    Step::DefineFieldDatatype
                 }
                 Step::DefineFieldDatatype => {
-                    let token = self.pop().to_uppercase();
+                    let token = self.pop();
                     if !DATATYPES.contains(&token.as_str()) {
                         panic!("Expected a Datatype, found {}", token);
                     };
@@ -175,7 +182,7 @@ impl Parser {
                     self.query_data
                         .fields
                         .push((token, Vec::new(), String::new()));
-                    self.step = Step::DefineFieldDatatypeOpenParen;
+                    Step::DefineFieldDatatypeOpenParen
                 }
                 Step::DefineFieldDatatypeOpenParen => {
                     let token = self.pop();
@@ -187,7 +194,7 @@ impl Parser {
                     }
 
                     let next_token = self.peek();
-                    self.step = if next_token == CLOSE_PAREN {
+                    if next_token == CLOSE_PAREN {
                         self.pop();
                         Step::DefineFieldIdentifier
                     } else {
@@ -200,7 +207,7 @@ impl Parser {
                     options.push(token);
 
                     let next_token = self.pop();
-                    self.step = match next_token.as_str() {
+                    match next_token.as_str() {
                         CLOSE_PAREN => Step::DefineFieldIdentifier,
                         COMMA => Step::DefineFieldDatatypeOption,
                         _ => panic!("Expected close paren ')' or comma ',', got {}", next_token),
@@ -227,30 +234,28 @@ impl Parser {
                     *identifier = token;
 
                     let next_token = self.pop();
-                    self.step = match next_token.as_str() {
+                    match next_token.as_str() {
                         CLOSE_PAREN => Step::DefineTableStructureCloseParen,
                         COMMA => Step::DefineFieldDatatype,
                         _ => panic!("Expected close paren ')' or comma ',', got {}", next_token),
                     }
                 }
-                Step::DefineTableStructureCloseParen => {
-                    self.step = match self.pop().to_uppercase().as_str() {
-                        SEMICOLON => Step::End,
-                        MODE => Step::DefineTableMode,
-                        CONSTRAINED => Step::DefineConstraintOpenParen,
-                        found => panic!("Unexpected token {}", found),
-                    };
-                }
+                Step::DefineTableStructureCloseParen => match self.pop().to_uppercase().as_str() {
+                    SEMICOLON => Step::End,
+                    MODE => Step::DefineTableMode,
+                    CONSTRAINED => Step::DefineConstraintOpenParen,
+                    found => panic!("Unexpected token {}", found),
+                },
                 Step::DefineTableMode => {
-                    let token = self.pop().to_uppercase();
-                    if ![FINSERT, FREAD, FDELETE, LMEM].contains(&token.as_str()) {
+                    let token = self.pop();
+                    if ![FADD, FREAD, FDELETE, LMEM].contains(&token.as_str()) {
                         panic!("Expected a mode, found {}", token);
                     }
 
                     self.query_data.modes.push(token);
-                    self.step = match self.peek().as_str() {
+                    match self.peek().as_str() {
                         SEMICOLON => Step::End,
-                        FINSERT | FREAD | FDELETE | LMEM => Step::DefineTableMode,
+                        FADD | FREAD | FDELETE | LMEM => Step::DefineTableMode,
                         token => panic!("Expected another mode or semicolon, found {}", token),
                     }
                 }
@@ -260,7 +265,7 @@ impl Parser {
                         panic!("Expected open paren, found {}", token);
                     }
 
-                    self.step = Step::DefineConstraintOn;
+                    Step::DefineConstraintOn
                 }
                 Step::DefineConstraintOn => {
                     let token = self.pop();
@@ -268,12 +273,12 @@ impl Parser {
                         panic!("Expected ON, found {}", token);
                     }
 
-                    self.step = Step::DefineConstraintIdentifier;
+                    Step::DefineConstraintIdentifier
                 }
                 Step::DefineConstraintIdentifier => {
                     let token = self.pop_identifier();
                     self.query_data.constraints.push((token, Vec::new()));
-                    self.step = Step::DefineConstraint;
+                    Step::DefineConstraint
                 }
                 Step::DefineConstraint => {
                     let token = self.pop();
@@ -285,8 +290,11 @@ impl Parser {
                     let (_, ref mut constraints) = self.query_data.constraints.last_mut().unwrap();
                     constraints.push((token, Vec::new()));
 
-                    self.step = match self.peek().as_str() {
-                        OPEN_PAREN => Step::DefineConstraintOptionOpenParen,
+                    match self.peek().as_str() {
+                        OPEN_PAREN => {
+                            self.pop();
+                            Step::DefineConstraintOption
+                        }
                         EXISTS | UNIQUE | PKEY | FKEY | SUCHTHAT | DEFAULT | INC => {
                             Step::DefineConstraint
                         }
@@ -298,13 +306,9 @@ impl Parser {
                         _ => panic!(),
                     }
                 }
-                Step::DefineConstraintOptionOpenParen => {
-                    self.pop();
-                    self.step = Step::DefineConstraintOption;
-                }
                 Step::DefineConstraintOption => {
                     let token = self.peek();
-                    self.step = match token.as_str() {
+                    match token.as_str() {
                         CLOSE_PAREN => Step::DefineConstraintOptionCloseParen,
                         _ => {
                             self.pop();
@@ -318,7 +322,7 @@ impl Parser {
                 }
                 Step::DefineConstraintOptionCloseParen => {
                     self.pop();
-                    self.step = match self.peek().as_str() {
+                    match self.peek().as_str() {
                         COMMA => {
                             self.pop();
                             Step::DefineConstraintOn
@@ -334,10 +338,43 @@ impl Parser {
                 }
                 Step::DefineConstraintCloseParen => {
                     self.pop();
-                    self.step = match self.pop().as_str() {
+                    match self.pop().as_str() {
                         MODE => Step::DefineTableMode,
                         found_token => panic!("Expected mode or end query, found {}", found_token),
                     }
+                }
+                Step::InsertValueStructure => {
+                    let token = self.pop();
+                    if token != STRUCTURED {
+                        panic!("Expected keyword structured, found {}", token);
+                    }
+
+                    Step::InsertValueStructureOpenParen
+                }
+                Step::InsertValueStructureOpenParen => {
+                    let token = self.pop();
+                    if token != OPEN_PAREN {
+                        panic!("Expected open paren, found {}", token);
+                    }
+
+                    Step::InsertValueIdentifier
+                }
+                Step::InsertValueIdentifier => {
+                    let token = self.pop_string_or_identifier();
+                    self.query_data.inserted_data.push(token);
+
+                    match self.peek().as_str() {
+                        CLOSE_PAREN => Step::InsertValueStructureCloseParen,
+                        COMMA => {
+                            self.pop();
+                            Step::InsertValueIdentifier
+                        }
+                        found_token => panic!("Unexpected token {}", found_token),
+                    }
+                }
+                Step::InsertValueStructureCloseParen => {
+                    // TODO - Add logic for what happens after initial STRUCTURED.
+                    Step::End
                 }
                 Step::End => return,
             }
@@ -390,6 +427,23 @@ impl Parser {
                 return (token.to_string(), token.len());
             }
         }
+        self.peek_string_or_indentifier_with_length()
+    }
+
+    fn pop_string_or_identifier(&mut self) -> String {
+        let (res, len) = self.peek_string_or_indentifier_with_length();
+        self.location += len;
+        self.pop_whitespace();
+
+        res
+    }
+
+    fn peek_string_or_indentifier(&self) -> String {
+        let (res, _) = self.peek_string_or_indentifier_with_length();
+        res
+    }
+
+    fn peek_string_or_indentifier_with_length(&self) -> (String, usize) {
         if self.query.chars().nth(self.location).unwrap() == '\'' {
             return self.peek_string_with_length();
         }

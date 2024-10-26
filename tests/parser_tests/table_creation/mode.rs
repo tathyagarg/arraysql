@@ -12,12 +12,12 @@ fn test_mode() {
                 STRING(64) name,\
                 OPTIONS(math, english) favorite_subject\
             )\
-            MODE FREAD FINSERT;"
+            MODE FREAD FADD;"
             .to_string(),
     )
     .parse();
 
-    assert_eq!(p.query_data.modes, vec!["FREAD", "FINSERT"]);
+    assert_eq!(p.query_data.modes, vec!["FREAD", "FADD"]);
 }
 
 #[test]

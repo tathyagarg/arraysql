@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 //                      FIELD ,      CONSTR,   OPTIONS
 type Constraints = Vec<(String, Vec<(String, Vec<String>)>)>;
 
@@ -7,6 +9,7 @@ pub enum QueryType {
     None,
     DatabaseCreation,
     TableCreation,
+    Insert,
 }
 
 #[derive(Default, Debug)]
@@ -15,8 +18,13 @@ pub struct Query {
     pub db_name: String,
     pub table_name: String,
 
+    // ============ Table Creation ============
     //               DTYPE ,    OPTIONS , IDTFR
     pub fields: Vec<(String, Vec<String>, String)>,
     pub modes: Vec<String>,
     pub constraints: Constraints,
+    //
+    // ============ Insertions ============
+    pub inserted_data: Vec<String>,
+    pub insertion_map: HashMap<String, String>,
 }

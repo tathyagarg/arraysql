@@ -32,7 +32,7 @@ fn test_basic_contraints() {
                 ON name EXISTS,\
                 ON favorite_subject DEFAULT(math)\
             )\
-            MODE FREAD FINSERT;"
+            MODE FREAD FADD;"
             .to_string(),
     )
     .parse();
@@ -73,7 +73,7 @@ fn test_multiple_constraint_options() {
                 ON favorite_subject DEFAULT(math),\
                 ON max_marks SUCHTHAT(max_marks <= 80) DEFAULT(0)\
             )\
-            MODE FREAD FINSERT;"
+            MODE FREAD FADD;"
             .to_string(),
     )
     .parse();
@@ -93,7 +93,7 @@ fn test_multiple_constraint_options() {
         (
             "max_marks",
             vec![
-                ("SUCHTHAT", vec!["max_marks", "<", "=", "80"]),
+                ("SUCHTHAT", vec!["max_marks", "<=", "80"]),
                 ("DEFAULT", vec!["0"]),
             ],
         ),

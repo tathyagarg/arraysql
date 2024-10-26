@@ -5,7 +5,7 @@ mod parser;
 fn main() {
     let mut p = parser::Parser::default();
     p.set_query(String::from(
-        "TABLE sigma ON dbb STRUCTURED (UINT(skibidi) skibidi) CONSTRAINED (ON skibidi UNIQUE, ON rizz UNIQUE PKEY INC DEFAULT(AUTO)) MODE FREAD FDELETE;",
+        "INSERT STRUCTURED ('I love turtles', 3, 12, 'skibidi sigma')",
     ));
     p.parse();
 

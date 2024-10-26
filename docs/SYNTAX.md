@@ -54,7 +54,7 @@ MaybeSQL defines the following constants:
 ## Modes
 MaybeSQL uses 2 sets of 2 modes each to control which action you want to place more importance on:
 Group 1:
-1. `FINSERT`: Faster inserts
+1. `FADD`: Faster inserts
 2. `FREAD`: Faster reads
 Group 2:
 3. `FDELETE`: Faster deletions
@@ -90,7 +90,7 @@ TABLE orders ON my_database STRUCTURED (
     ON order_id EXISTS PKEY INC,
     ON item_name EXISTS
 )
-MODE FINSERT LMEM;
+MODE FADD LMEM;
 
 TABLE users ON my_database STRUCTURED (
     UINT(8) user_id,
@@ -109,12 +109,9 @@ Data is inserted into tables with:
 INSERT STRUCTURED ([value,]+) ON table_name ON database_name;
 
 # Example
-INSERT STRUCTURED () ON users ON my_database;
+INSERT STRUCTURED (...) ON users STRUCTURED (...) ON my_database;
 
-INSERT STRUCTURED ("Ice cream") ON orders ON my_database;
-INSERT STRUCTURED ("Pizza") ON orders ON my_database;
-INSERT STRUCTURED ("Pasta") ON orders ON my_database;
-INSERT STRUCTURED ("Noodles") ON orders ON my_database;
-INSERT STRUCTURED ([1, 3, 4]) ON users ON my_database;
+INSERT STRUCTURED ("Ice cream") ON orders STRUCTURED (item_name) ON my_database;
+INSERT STRUCTURED ([1]) ON users ON STRUCTURED (orders_placed) ON my_database;
 ```
 

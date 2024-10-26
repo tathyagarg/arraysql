@@ -1,8 +1,9 @@
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq, Eq)]
 pub enum Step {
     #[default]
     Start,
     DefineDatabaseName,
+    // ============ Table Creation ============
     DefineTableName,
     DefineTableOn,
     DefineTableDatabase,
@@ -18,9 +19,13 @@ pub enum Step {
     DefineConstraintOn,
     DefineConstraintIdentifier,
     DefineConstraint,
-    DefineConstraintOptionOpenParen,
     DefineConstraintOption,
     DefineConstraintOptionCloseParen,
     DefineConstraintCloseParen,
+    // ============ Insertions ============
+    InsertValueStructure,
+    InsertValueStructureOpenParen,
+    InsertValueIdentifier,
+    InsertValueStructureCloseParen,
     End,
 }
