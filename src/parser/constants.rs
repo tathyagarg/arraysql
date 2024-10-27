@@ -26,15 +26,35 @@ pub const CLOSE_PAREN: &str = ")";
 pub const COMMA: &str = ",";
 pub const SEMICOLON: &str = ";";
 
+pub const EQ: &str = "=";
+pub const NE: &str = "!=";
+pub const GE: &str = ">=";
+pub const LE: &str = "<=";
+pub const GT: &str = ">";
+pub const LT: &str = "<";
+
+pub const AND: &str = "AND";
+pub const OR: &str = "OR";
+
+pub const ADD: &str = "+";
+pub const SUB: &str = "-";
+pub const MUL: &str = "*";
+pub const DIV: &str = "/";
+
+pub const ABS: &str = "ABS";
+pub const NEG: &str = "NEG";
+pub const NOT: &str = "NOT";
+pub const BWNOT: &str = "~";
+
 pub const KEYWORDS: &[&str] = &[
     OPEN_PAREN,
     CLOSE_PAREN,
-    "=",
-    "<=",
-    ">=",
-    "!=",
-    ">",
-    "<",
+    EQ,
+    NE,
+    GE,
+    LE,
+    GT,
+    LT,
     COMMA,
     SEMICOLON,
     DATABASE,
@@ -57,6 +77,16 @@ pub const KEYWORDS: &[&str] = &[
     SUCHTHAT,
     DEFAULT,
     INC,
+    AND,
+    OR,
+    NOT,
+    ABS,
+    NEG,
+    BWNOT,
+    ADD,
+    SUB,
+    MUL,
+    DIV,
 ];
 
 pub const DT_STRING: &str = "STRING";
@@ -68,7 +98,7 @@ pub const DT_INT: &str = "INT";
 pub const DT_FLOAT: &str = "FLOAT";
 pub const DT_TIMESTAMP: &str = "TIMESTAMP";
 
-pub const DATATYPES: [&str; 8] = [
+pub const DATATYPES: &[&str] = &[
     DT_STRING,
     DT_OPTIONS,
     DT_CHAR,
@@ -78,3 +108,11 @@ pub const DATATYPES: [&str; 8] = [
     DT_FLOAT,
     DT_TIMESTAMP,
 ];
+
+pub const OPERATORS: &[&str] = &[
+    ABS, NEG, NOT, BWNOT, EXISTS, ADD, SUB, MUL, DIV, EQ, NE, GE, LE, GT, LT,
+];
+
+pub const BINOPS: &[&str] = &[ADD, SUB, MUL, DIV, EQ, NE, GE, LE, GT, LT];
+
+pub const UNOPS: &[&str] = &[ABS, NEG, NOT, BWNOT, EXISTS];

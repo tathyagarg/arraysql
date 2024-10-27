@@ -1,3 +1,7 @@
+use crate::parser::query::Expression;
+use crate::parser::query::Identifier;
+use crate::parser::query_types::type_checker;
+
 use super::super::constants::*;
 use super::super::Parser;
 use super::super::Step;
@@ -5,9 +9,16 @@ use super::super::Step;
 pub fn inserting(parser: &mut Parser, step: Step) -> Step {
     match step {
         Step::InsertValueIdentifier => {
+            let token = parser.peek();
+            println!("{}", token);
             let token = parser.pop_string_or_identifier();
             println!("{}", token);
-            parser.query_data.inserted_value.push(token);
+            parser
+                .query_data
+                .inserted_value
+                .push(type_checker::as_identifier(&token));
+
+            println!("{}", parser.peek());
 
             match parser.peek().as_str() {
                 CLOSE_PAREN => {
@@ -28,7 +39,7 @@ pub fn inserting(parser: &mut Parser, step: Step) -> Step {
         }
         Step::InsertTable => {
             let token = parser.pop_identifier();
-            parser.query_data.table_name = token;
+            parser.query_data.table_name = Identifier::StringLiteral(token);
 
             {
                 let token = parser.pop();
@@ -41,7 +52,10 @@ pub fn inserting(parser: &mut Parser, step: Step) -> Step {
         }
         Step::InsertFieldIdentifier => {
             let token = parser.pop_string_or_identifier();
-            parser.query_data.inserted_field.push(token);
+            parser
+                .query_data
+                .inserted_field
+                .push(type_checker::as_identifier(&token));
 
             match parser.peek().as_str() {
                 CLOSE_PAREN => {
@@ -62,7 +76,7 @@ pub fn inserting(parser: &mut Parser, step: Step) -> Step {
         }
         Step::InsertDatabase => {
             let token = parser.pop_identifier();
-            parser.query_data.db_name = token;
+            parser.query_data.db_name = Identifier::StringLiteral(token);
 
             let token = parser.pop();
             parser.ensure_token(token, SEMICOLON);

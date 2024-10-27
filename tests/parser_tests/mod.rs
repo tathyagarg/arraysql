@@ -1,11 +1,11 @@
-#[cfg(test)]
+// #[cfg(test)]
 pub mod database_creation;
 
 #[cfg(test)]
 pub mod table_creation;
 
-#[cfg(test)]
+// #[cfg(test)]
 pub mod inserting;
 
-#[cfg(test)]
+// #[cfg(test)]
 pub mod reading;

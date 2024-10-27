@@ -1,7 +1,9 @@
+use query::Expression;
+use query::Identifier;
 use query::QueryType;
-use query_types::inserting::inserting;
 use regex::Regex;
 use std::cmp::min;
+use std::collections::HashMap;
 
 pub mod constants;
 pub mod query;
@@ -14,7 +16,7 @@ use query_types::reading;
 use query_types::table_creation;
 use step::Step;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Parser {
     pub query: String,
     pub location: usize,
@@ -23,6 +25,27 @@ pub struct Parser {
 }
 
 impl Parser {
+    pub fn new() -> Parser {
+        Parser {
+            query: String::new(),
+            location: 0,
+            query_data: query::Query {
+                _type: QueryType::None,
+                db_name: Identifier::StringLiteral(String::new()),
+                table_name: Identifier::StringLiteral(String::new()),
+                fields: Vec::new(),
+                modes: Vec::new(),
+                constraints: HashMap::new(),
+                curr_constraint: Identifier::StringLiteral(String::new()),
+                inserted_value: Vec::new(),
+                inserted_field: Vec::new(),
+                read_fields: Vec::new(),
+                conditions: Expression::None,
+            },
+            step: Step::Start,
+        }
+    }
+
     fn ensure_token(&self, token: String, expected: &str) -> u8 {
         if token != expected {
             panic!(
@@ -38,7 +61,7 @@ impl Parser {
     }
 
     pub fn reset(&mut self) {
-        *self = Parser::default();
+        *self = Parser::new();
     }
 
     pub fn set_query(&mut self, query: String) -> &mut Parser {
@@ -55,7 +78,7 @@ impl Parser {
                     panic!("Expected identifier for database name.");
                 }
 
-                self.query_data.db_name = identifier;
+                self.query_data.db_name = Identifier::StringLiteral(identifier);
 
                 {
                     let token = self.pop();
@@ -151,13 +174,14 @@ impl Parser {
     fn pop_string_or_identifier(&mut self) -> String {
         let (res, len) = self.peek_string_or_indentifier_with_length();
         self.location += len;
+        println!(
+            "Loc: {} {} {:?}",
+            self.location,
+            self.query,
+            &self.query[self.location..self.location + 2]
+        );
         self.pop_whitespace();
 
-        res
-    }
-
-    fn peek_string_or_indentifier(&self) -> String {
-        let (res, _) = self.peek_string_or_indentifier_with_length();
         res
     }
 
@@ -182,9 +206,16 @@ impl Parser {
             if self.query.chars().nth(i).unwrap() == '\''
                 && self.query.chars().nth(i - 1).unwrap() != '\\'
             {
+                println!(
+                    "Returning string {} {}",
+                    &self.query[self.location..i + 1],
+                    self.query.clone().chars().nth(i).unwrap()
+                );
                 return (
-                    self.query[self.location + 1..i].to_string(),
-                    self.query[self.location + 1..i].len() + 2,
+                    self.query[self.location..i + 1].to_string(),
+                    // Why did I remove the + 2?
+                    // No fucking clue.
+                    self.query[self.location..i + 1].len(), // + 2,
                 );
             }
         }
@@ -202,8 +233,8 @@ impl Parser {
                 && self.query.chars().nth(i - 1).unwrap() != '\\'
             {
                 return (
-                    self.query[self.location + 1..i].to_string(),
-                    self.query[self.location + 1..i].len() + 2,
+                    self.query[self.location..i + 1].to_string(),
+                    self.query[self.location..i + 1].len(),
                 );
             }
         }

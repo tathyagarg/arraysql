@@ -1,6 +1,24 @@
-use super::super::constants::*;
-use super::super::Parser;
-use super::super::Step;
+use std::collections::HashMap;
+
+use super::type_checker;
+use crate::parser::constants::*;
+use crate::parser::query::string_to_binop;
+use crate::parser::query::string_to_unop;
+use crate::parser::query::Constraint;
+use crate::parser::query::ConstraintType;
+use crate::parser::query::Expression;
+use crate::parser::query::Identifier;
+use crate::parser::query::Mode;
+use crate::parser::Parser;
+use crate::parser::Step;
+
+fn push_to_options(latest: &mut Constraint, token: String) {
+    latest.options.push(if type_checker::check_unop(&token) {
+        Expression::Unary(string_to_unop(&token), Box::new(Expression::None))
+    } else {
+        Expression::Identifier(type_checker::as_identifier(&token))
+    })
+}
 
 pub fn table_creation(parser: &mut Parser, step: Step) -> Step {
     match step {
@@ -10,7 +28,7 @@ pub fn table_creation(parser: &mut Parser, step: Step) -> Step {
                 panic!("Expected indentifier for table name");
             }
 
-            parser.query_data.table_name = identifier;
+            parser.query_data.table_name = Identifier::StringLiteral(identifier);
             {
                 // Ensure ON after table name
                 let token = parser.pop();
@@ -24,7 +42,7 @@ pub fn table_creation(parser: &mut Parser, step: Step) -> Step {
                 panic!("Expected identifier for database name.");
             }
 
-            parser.query_data.db_name = identifier;
+            parser.query_data.db_name = Identifier::StringLiteral(identifier);
             {
                 // Ensure 'STRUCTURED ('
                 let token = parser.pop();
@@ -41,10 +59,11 @@ pub fn table_creation(parser: &mut Parser, step: Step) -> Step {
                 panic!("Expected a Datatype, found {:?}", token);
             };
 
-            parser
-                .query_data
-                .fields
-                .push((token, Vec::new(), String::new()));
+            parser.query_data.fields.push((
+                Identifier::Datatype(token),
+                Vec::new(),
+                Identifier::Field(String::new()),
+            ));
             {
                 let token = parser.pop();
                 parser.ensure_token(token, OPEN_PAREN);
@@ -60,10 +79,18 @@ pub fn table_creation(parser: &mut Parser, step: Step) -> Step {
         }
         Step::DefineFieldDatatypeOption => {
             let token = parser.pop();
-            let (_, ref mut options, _) = parser.query_data.fields.last_mut().unwrap();
-            options.push(token);
+            let (dtype, ref mut options, _) = parser.query_data.fields.last_mut().unwrap();
+
+            if let Identifier::Datatype(data) = dtype {
+                if data == DT_OPTIONS {
+                    options.push(Identifier::StringLiteral(token));
+                } else {
+                    options.push(Identifier::IntLiteral(token.parse::<i32>().unwrap()));
+                }
+            }
 
             let next_token = parser.pop();
+
             match next_token.as_str() {
                 CLOSE_PAREN => Step::DefineFieldIdentifier,
                 COMMA => Step::DefineFieldDatatypeOption,
@@ -91,7 +118,7 @@ pub fn table_creation(parser: &mut Parser, step: Step) -> Step {
             }
 
             let (_, _, ref mut identifier) = parser.query_data.fields.last_mut().unwrap();
-            *identifier = token;
+            *identifier = Identifier::Field(token);
 
             let next_token = parser.pop();
             match next_token.as_str() {
@@ -115,11 +142,15 @@ pub fn table_creation(parser: &mut Parser, step: Step) -> Step {
         },
         Step::DefineTableMode => {
             let token = parser.pop();
-            if ![FADD, FREAD, FDELETE, LMEM].contains(&token.as_str()) {
-                panic!("Expected a mode, found {:?}", token);
-            }
+            let mode = match token.as_str() {
+                FADD => Mode::FADD,
+                FREAD => Mode::FREAD,
+                FDELETE => Mode::FDELETE,
+                LMEM => Mode::LMEM,
+                _ => panic!("Expected a mode, found {:?}", token),
+            };
 
-            parser.query_data.modes.push(token);
+            parser.query_data.modes.push(mode);
             match parser.peek().as_str() {
                 SEMICOLON => Step::End,
                 FADD | FREAD | FDELETE | LMEM => Step::DefineTableMode,
@@ -134,16 +165,37 @@ pub fn table_creation(parser: &mut Parser, step: Step) -> Step {
         }
         Step::DefineConstraintIdentifier => {
             let token = parser.pop_identifier();
-            parser.query_data.constraints.push((token, Vec::new()));
+            let mut initial: HashMap<Identifier, Vec<Constraint>> = HashMap::new();
+            initial.insert(Identifier::Field(token.clone()), Vec::new());
+
+            parser.query_data.curr_constraint = Identifier::Field(token);
+
+            parser.query_data.constraints.extend(initial);
             Step::DefineConstraint
         }
         Step::DefineConstraint => {
             let token = parser.pop();
-            if ![EXISTS, UNIQUE, PKEY, FKEY, SUCHTHAT, DEFAULT, INC].contains(&token.as_str()) {
-                panic!("Expected a constraint, found {:?}", token);
-            }
-            let (_, ref mut constraints) = parser.query_data.constraints.last_mut().unwrap();
-            constraints.push((token, Vec::new()));
+            let constraint = match token.as_str() {
+                EXISTS => ConstraintType::Exists,
+                UNIQUE => ConstraintType::Unique,
+                PKEY => ConstraintType::PKey,
+                FKEY => ConstraintType::FKey,
+                SUCHTHAT => ConstraintType::Suchthat,
+                DEFAULT => ConstraintType::Default,
+                INC => ConstraintType::Inc,
+                _ => panic!("Expected a constraint, found {:?}", token),
+            };
+
+            let last = parser
+                .query_data
+                .constraints
+                .get_mut(&parser.query_data.curr_constraint)
+                .unwrap();
+
+            last.push(Constraint {
+                constraint_type: constraint,
+                options: Vec::new(),
+            });
 
             match parser.peek().as_str() {
                 OPEN_PAREN => {
@@ -164,11 +216,44 @@ pub fn table_creation(parser: &mut Parser, step: Step) -> Step {
             match token.as_str() {
                 CLOSE_PAREN => Step::DefineConstraintOptionCloseParen,
                 _ => {
-                    parser.pop();
-                    let (_, ref mut constraints) =
-                        parser.query_data.constraints.last_mut().unwrap();
-                    let (_, ref mut constraint_options) = constraints.last_mut().unwrap();
-                    constraint_options.push(token);
+                    let token = parser.pop();
+                    let curr_constraints = parser
+                        .query_data
+                        .constraints
+                        .get_mut(&parser.query_data.curr_constraint)
+                        .unwrap();
+                    let latest: &mut Constraint = curr_constraints.last_mut().unwrap();
+
+                    match latest.options.last_mut().unwrap_or(&mut Expression::None) {
+                        Expression::Binary(_, operands) => match **operands {
+                            (_, Expression::None) => {
+                                operands.1 =
+                                    Expression::Identifier(type_checker::as_identifier(&token))
+                            }
+                            (_, _) => push_to_options(latest, token),
+                        },
+                        Expression::Unary(_, operand) => match **operand {
+                            Expression::None => {
+                                *operand = Box::new(Expression::Identifier(
+                                    type_checker::as_identifier(&token),
+                                ))
+                            }
+                            _ => push_to_options(latest, token),
+                        },
+                        Expression::Identifier(_) => {
+                            if type_checker::check_binop(&token) {
+                                let prev = latest.options.pop().unwrap();
+                                latest.options.push(Expression::Binary(
+                                    string_to_binop(&token),
+                                    Box::new((prev, Expression::None)),
+                                ));
+                            } else {
+                                push_to_options(latest, token);
+                            }
+                        }
+                        Expression::None => push_to_options(latest, token),
+                    };
+
                     Step::DefineConstraintOption
                 }
             }

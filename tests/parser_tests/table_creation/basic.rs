@@ -1,20 +1,29 @@
-use maybe_sql::parser;
+use maybe_sql::parser::{
+    self,
+    query::{Expression, Identifier},
+};
 
 #[test]
 fn test_table_creation() {
-    let mut p = parser::Parser::default();
+    let mut p = parser::Parser::new();
 
     p.set_query("TABLE my_table ON my_database STRUCTURED (UINT(1) id);".to_string())
         .parse();
 
     assert_eq!(p.query_data._type, parser::query::QueryType::TableCreation);
-    assert_eq!(p.query_data.db_name, "my_database");
-    assert_eq!(p.query_data.table_name, "my_table");
+    assert_eq!(
+        p.query_data.db_name,
+        Identifier::StringLiteral("my_database".to_string())
+    );
+    assert_eq!(
+        p.query_data.table_name,
+        Identifier::StringLiteral("my_table".to_string())
+    );
 }
 
 #[test]
 fn test_table_field_data() {
-    let mut p = parser::Parser::default();
+    let mut p = parser::Parser::new();
 
     p.set_query("TABLE my_table ON my_database STRUCTURED (UINT(1) id);".to_string())
         .parse();
@@ -22,21 +31,33 @@ fn test_table_field_data() {
     let field_data = &p.query_data.fields[0];
     let (datatype, options, identifier) = field_data;
 
-    assert_eq!(datatype, "UINT");
-    assert_eq!(options, &vec!["1"]);
-    assert_eq!(identifier, "id");
+    assert_eq!(datatype, &Identifier::Datatype("UINT".to_string()));
+    assert_eq!(options, &vec![Identifier::IntLiteral(1)]);
+    assert_eq!(identifier, &Identifier::Field("id".to_string()));
 }
 
 #[test]
 fn test_multiple_fields() {
-    let mut p = parser::Parser::default();
+    let mut p = parser::Parser::new();
 
     p.set_query(
         "TABLE my_table ON my_database STRUCTURED (UINT(1) id, STRING(64) name);".to_string(),
     )
     .parse();
 
-    let expected = [("UINT", vec!["1"], "id"), ("STRING", vec!["64"], "name")];
+    // let expected = [("UINT", vec!["1"], "id"), ("STRING", vec!["64"], "name")];
+    let expected = [
+        (
+            Identifier::Datatype("UINT".to_string()),
+            vec![Identifier::IntLiteral(1)],
+            Identifier::Field("id".to_string()),
+        ),
+        (
+            Identifier::Datatype("STRING".to_string()),
+            vec![Identifier::IntLiteral(64)],
+            Identifier::Field("name".to_string()),
+        ),
+    ];
 
     for (i, (datatype, options, identifier)) in p.query_data.fields.iter().enumerate() {
         let (expected_datatype, expected_options, expected_identifier) = &expected[i];
@@ -44,7 +65,7 @@ fn test_multiple_fields() {
         assert_eq!(datatype, expected_datatype);
 
         for (i, option) in options.iter().enumerate() {
-            assert_eq!(option, expected_options[i]);
+            assert_eq!(option, &expected_options[i]);
         }
 
         assert_eq!(identifier, expected_identifier);
@@ -54,7 +75,7 @@ fn test_multiple_fields() {
 #[test]
 #[should_panic]
 fn test_no_fields() {
-    let mut p = parser::Parser::default();
+    let mut p = parser::Parser::new();
 
     p.set_query("TABLE my_table ON my_database STRUCTURED ();".to_string())
         .parse();
@@ -63,7 +84,7 @@ fn test_no_fields() {
 #[test]
 #[should_panic]
 fn test_no_field_identifier() {
-    let mut p = parser::Parser::default();
+    let mut p = parser::Parser::new();
 
     p.set_query("TABLE my_table ON my_database STRUCTURED (UINT(1), STRING(64) name);".to_string())
         .parse();
@@ -71,7 +92,7 @@ fn test_no_field_identifier() {
 
 #[test]
 fn test_empty_options() {
-    let mut p = parser::Parser::default();
+    let mut p = parser::Parser::new();
 
     p.set_query(
         "TABLE my_table ON my_database STRUCTURED (UINT() id, STRING(64) name);".to_string(),
@@ -81,7 +102,7 @@ fn test_empty_options() {
 
 #[test]
 fn test_multiple_options() {
-    let mut p = parser::Parser::default();
+    let mut p = parser::Parser::new();
 
     p.set_query(
         "TABLE my_table ON my_database STRUCTURED (UINT() id, STRING(64) name, OPTIONS(math, english) favorite_subject);"
@@ -90,9 +111,24 @@ fn test_multiple_options() {
     .parse();
 
     let expected = [
-        ("UINT", vec![], "id"),
-        ("STRING", vec!["64"], "name"),
-        ("OPTIONS", vec!["math", "english"], "favorite_subject"),
+        (
+            Identifier::Datatype("UINT".to_string()),
+            vec![],
+            Identifier::Field("id".to_string()),
+        ),
+        (
+            Identifier::Datatype("STRING".to_string()),
+            vec![Identifier::IntLiteral(64)],
+            Identifier::Field("name".to_string()),
+        ),
+        (
+            Identifier::Datatype("OPTIONS".to_string()),
+            vec![
+                Identifier::StringLiteral("math".to_string()),
+                Identifier::StringLiteral("english".to_string()),
+            ],
+            Identifier::Field("favorite_subject".to_string()),
+        ),
     ];
 
     for (i, (datatype, options, identifier)) in p.query_data.fields.iter().enumerate() {
@@ -101,7 +137,7 @@ fn test_multiple_options() {
         assert_eq!(datatype, expected_datatype);
 
         for (i, option) in options.iter().enumerate() {
-            assert_eq!(option, expected_options[i]);
+            assert_eq!(option, &expected_options[i]);
         }
 
         assert_eq!(identifier, expected_identifier);
