@@ -20,19 +20,7 @@ fn test_basic_contraints() {
     let mut p = parser::Parser::default();
 
     p.set_query(
-        "TABLE my_table \
-            ON my_database \
-            STRUCTURED (\
-                UINT() id,\
-                STRING(64) name,\
-                OPTIONS(math, english) favorite_subject\
-            )\
-            CONSTRAINED (\
-                ON id EXISTS PKEY UNIQUE INC,\
-                ON name EXISTS,\
-                ON favorite_subject DEFAULT(math)\
-            )\
-            MODE FREAD FADD;"
+        "TABLE my_table ON my_database STRUCTURED (UINT() id, STRING(64) name, OPTIONS(math, english) favorite_subject) CONSTRAINED (ON id EXISTS PKEY UNIQUE INC, ON name EXISTS, ON favorite_subject DEFAULT(math)) MODE FREAD FADD;"
             .to_string(),
     )
     .parse();
@@ -59,21 +47,7 @@ fn test_multiple_constraint_options() {
     let mut p = parser::Parser::default();
 
     p.set_query(
-        "TABLE my_table \
-            ON my_database \
-            STRUCTURED (\
-                UINT() id,\
-                STRING(64) name,\
-                OPTIONS(math, english) favorite_subject,\
-                UINT() max_marks\
-            )\
-            CONSTRAINED (\
-                ON id EXISTS PKEY UNIQUE INC,\
-                ON name EXISTS,\
-                ON favorite_subject DEFAULT(math),\
-                ON max_marks SUCHTHAT(max_marks <= 80) DEFAULT(0)\
-            )\
-            MODE FREAD FADD;"
+        "TABLE my_table ON my_database STRUCTURED (UINT() id, STRING(64) name, OPTIONS(math, english) favorite_subject, UINT() max_marks) CONSTRAINED (ON id EXISTS PKEY UNIQUE INC, ON name EXISTS, ON favorite_subject DEFAULT(math), ON max_marks SUCHTHAT(max_marks <= 80) DEFAULT(0)) MODE FREAD FADD;"
             .to_string(),
     )
     .parse();

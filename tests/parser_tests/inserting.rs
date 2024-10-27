@@ -4,10 +4,7 @@ use maybe_sql::parser::{self, query::QueryType};
 fn test_basic_insert() {
     let mut p = parser::Parser::default();
     p.set_query(
-        "INSERT STRUCTURED ('my_data')\
-        ON my_table STRUCTURED (field1)\
-        ON my_database;"
-            .to_string(),
+        "INSERT STRUCTURED ('my_data') ON my_table STRUCTURED (field1) ON my_database;".to_string(),
     )
     .parse();
 
@@ -22,17 +19,7 @@ fn test_basic_insert() {
 fn test_multiple_fields() {
     let mut p = parser::Parser::default();
     p.set_query(
-        "INSERT STRUCTURED (\
-            'Tathya',\
-            15,\
-            ['Rust', 'Python']\
-        )\
-        ON my_table STRUCTURED (\
-            name,\
-            age,\
-            known_languages\
-        )\
-        ON my_database;"
+        "INSERT STRUCTURED ('Tathya', 15, ['Rust', 'Python']) ON my_table STRUCTURED (name, age, known_languages) ON my_database;"
             .to_string(),
     )
     .parse();

@@ -8,6 +8,7 @@ pub enum QueryType {
     DatabaseCreation,
     TableCreation,
     Insert,
+    Read,
 }
 
 #[derive(Default, Debug)]
@@ -25,4 +26,8 @@ pub struct Query {
     // ============ Insertions ============
     pub inserted_value: Vec<String>,
     pub inserted_field: Vec<String>,
+    //
+    // ============ Reading ============
+    pub read_fields: Vec<String>,
+    pub conditions: Vec<String>,
 }

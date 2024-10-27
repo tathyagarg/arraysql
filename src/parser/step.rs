@@ -22,5 +22,10 @@ pub enum Step {
     InsertTable,
     InsertFieldIdentifier,
     InsertDatabase,
+    // ============ Reading ============
+    ReadFieldIdentifier,
+    ReadTableName,
+    ReadDatabaseName,
+    ReadConditionPart,
     End,
 }

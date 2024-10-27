@@ -113,3 +113,9 @@ INSERT STRUCTURED ("Ice cream") ON orders STRUCTURED (item_name) ON my_database;
 INSERT STRUCTURED ([1]) ON users ON STRUCTURED (orders_placed) ON my_database;
 ```
 
+## Reading data from table
+```
+READ STRUCTURED ([field,]+) ON table_name ON database_name [WHERE condition];
+
+READ STRUCTURED (name) ON users ON my_database;
+```

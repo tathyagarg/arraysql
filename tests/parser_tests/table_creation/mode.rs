@@ -5,14 +5,7 @@ fn test_mode() {
     let mut p = parser::Parser::default();
 
     p.set_query(
-        "TABLE my_table \
-            ON my_database \
-            STRUCTURED (\
-                UINT() id,\
-                STRING(64) name,\
-                OPTIONS(math, english) favorite_subject\
-            )\
-            MODE FREAD FADD;"
+        "TABLE my_table ON my_database STRUCTURED (UINT() id, STRING(64) name, OPTIONS(math, english) favorite_subject) MODE FREAD FADD;"
             .to_string(),
     )
     .parse();
@@ -25,14 +18,7 @@ fn test_single_mode() {
     let mut p = parser::Parser::default();
 
     p.set_query(
-        "TABLE my_table \
-            ON my_database \
-            STRUCTURED (\
-                UINT() id,\
-                STRING(64) name,\
-                OPTIONS(math, english) favorite_subject\
-            )\
-            MODE FREAD;"
+        "TABLE my_table ON my_database STRUCTURED (UINT() id, STRING(64) name, OPTIONS(math, english) favorite_subject) MODE FREAD;"
             .to_string(),
     )
     .parse();
@@ -46,14 +32,7 @@ fn test_no_mode_with_kw() {
     let mut p = parser::Parser::default();
 
     p.set_query(
-        "TABLE my_table \
-            ON my_database \
-            STRUCTURED (\
-                UINT() id,\
-                STRING(64) name,\
-                OPTIONS(math, english) favorite_subject\
-            )\
-            MODE;"
+        "TABLE my_table ON my_database STRUCTURED (UINT() id, STRING(64) name, OPTIONS(math, english) favorite_subject) MODE;"
             .to_string(),
     )
     .parse();
