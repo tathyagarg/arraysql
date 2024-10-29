@@ -1,8 +1,10 @@
 #![allow(dead_code)]
 
-mod engine;
-mod parser;
+use arraysql::{engine, parser};
 
 fn main() {
-    println!("Hello, World!");
+    let mut p = parser::Parser::new();
+    p.set_query("DATABASE my_database;".to_string()).parse();
+
+    engine::engine(&p);
 }
