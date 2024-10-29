@@ -1,7 +1,7 @@
-# MaybeSQL Syntax
+# ArraySQL Syntax
 
 ## Basic Principles
-Like SQL, MaybeSQL allows you to use newline characters to increase readability of your queries, and a `;` to end the query statement.
+Like SQL, ArraySQL allows you to use newline characters to increase readability of your queries, and a `;` to end the query statement.
 This file uses:
 - `[]-` to indicate an optional value.
 - `[]+` to indicate a value that can be specified between 1 and infinite times.
@@ -13,7 +13,7 @@ A collection can be made of each datatype through the following syntax:
 [datatype](max_size)
 ```
 Where `max_size` is the maximum number of elements the collection can hold.
-Datatypes in MaybeSQL always follow a syntax of `LABEL(options)`, where options may be left empty.
+Datatypes in ArraySQL always follow a syntax of `LABEL(options)`, where options may be left empty.
 
 ### String Datatypes
 1. `STRING(size)`: A string of size `size` bytes.
@@ -42,14 +42,14 @@ Datatypes in MaybeSQL always follow a syntax of `LABEL(options)`, where options 
 The `AUTO` keyword is used to automatically infer a default value.
 
 ## Constants
-MaybeSQL defines the following constants:
+ArraySQL defines the following constants:
 1. `U1MAX`: 255
 2. `U2MAX`: 65535
 3. `U4MAX`: 4294967295
 4. `U8MAX`: 18446744073709551615
 
 ## Modes
-MaybeSQL uses 2 sets of 2 modes each to control which action you want to place more importance on:
+ArraySQL uses 2 sets of 2 modes each to control which action you want to place more importance on:
 ### Group 1:
 1. `FADD`: Faster inserts
 2. `FREAD`: Faster reads

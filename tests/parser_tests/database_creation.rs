@@ -1,4 +1,4 @@
-use maybe_sql::parser::{self, query::Identifier};
+use arraysql::parser::{self, query::Identifier};
 
 #[test]
 fn test_database_creation() {

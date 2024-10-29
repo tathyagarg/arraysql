@@ -1,4 +1,4 @@
-use maybe_sql::parser::{self, query::Mode};
+use arraysql::parser::{self, query::Mode};
 
 #[test]
 fn test_mode() {

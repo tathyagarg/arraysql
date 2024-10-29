@@ -12,8 +12,10 @@ pub mod type_checker {
     ///
     ///  # Example
     ///  ```
-    ///  assert_eq!(maybe_sql::parser::query_types::type_checker::split_array(&"['a', 'bc', 'def']".to_string()), vec!["'a'", "'bc'", "'def'"]);
-    ///  assert_eq!(maybe_sql::parser::query_types::type_checker::split_array(&"[1, 2, 3]".to_string()), vec!["1", "2", "3"]);
+    ///  use arraysql::parser::query_types::type_checker::split_array;
+    ///
+    ///  assert_eq!(split_array(&"['a', 'bc', 'def']".to_string()), vec!["'a'", "'bc'", "'def'"]);
+    ///  assert_eq!(split_array(&"[1, 2, 3]".to_string()), vec!["1", "2", "3"]);
     ///  ```
     pub fn split_array(token: &str) -> Vec<String> {
         let mut res: Vec<String> = Vec::new();

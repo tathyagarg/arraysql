@@ -9,6 +9,8 @@ use super::super::Parser;
 use super::super::Step;
 use super::type_checker;
 
+// Why did using this work, and not my previous attempts?
+// No fucking clue.
 fn parse_condition(tokens: Vec<String>) -> Expression {
     let mut res = Expression::None;
 

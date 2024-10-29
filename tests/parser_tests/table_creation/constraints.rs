@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use maybe_sql::parser::{
+use arraysql::parser::{
     self,
     query::{BinaryOperation, Constraint, ConstraintType, Expression, Identifier},
 };

@@ -8,7 +8,6 @@ use super::super::Step;
 pub fn inserting(parser: &mut Parser, step: Step) -> Step {
     match step {
         Step::InsertValueIdentifier => {
-            let token = parser.peek();
             let token = parser.pop_string_or_identifier();
             parser
                 .query_data

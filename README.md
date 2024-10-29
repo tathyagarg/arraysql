@@ -1,5 +1,5 @@
-# MaybeSQL
-MaybeSQL is a database built in Rust.
+# ArraySQL 
+ArraySQL is a database management software built in Rust.
 
 ## Features
 1. Use of 2 systems of storage to allow the user to place more importance on how much data can be stored or how fast the data can be retrieved.

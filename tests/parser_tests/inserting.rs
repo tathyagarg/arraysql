@@ -1,4 +1,4 @@
-use maybe_sql::parser::{
+use arraysql::parser::{
     self,
     query::{Identifier, QueryType},
 };
