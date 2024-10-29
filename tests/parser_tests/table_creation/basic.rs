@@ -1,7 +1,4 @@
-use maybe_sql::parser::{
-    self,
-    query::{Expression, Identifier},
-};
+use maybe_sql::parser::{self, query::Identifier};
 
 #[test]
 fn test_table_creation() {

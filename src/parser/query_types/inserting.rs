@@ -1,4 +1,3 @@
-use crate::parser::query::Expression;
 use crate::parser::query::Identifier;
 use crate::parser::query_types::type_checker;
 

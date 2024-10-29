@@ -143,10 +143,10 @@ pub fn table_creation(parser: &mut Parser, step: Step) -> Step {
         Step::DefineTableMode => {
             let token = parser.pop();
             let mode = match token.as_str() {
-                FADD => Mode::FADD,
-                FREAD => Mode::FREAD,
-                FDELETE => Mode::FDELETE,
-                LMEM => Mode::LMEM,
+                FADD => Mode::Fadd,
+                FREAD => Mode::Fread,
+                FDELETE => Mode::Fdelete,
+                LMEM => Mode::Lmem,
                 _ => panic!("Expected a mode, found {:?}", token),
             };
 

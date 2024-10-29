@@ -15,7 +15,7 @@ pub mod type_checker {
     ///  assert_eq!(maybe_sql::parser::query_types::type_checker::split_array(&"['a', 'bc', 'def']".to_string()), vec!["'a'", "'bc'", "'def'"]);
     ///  assert_eq!(maybe_sql::parser::query_types::type_checker::split_array(&"[1, 2, 3]".to_string()), vec!["1", "2", "3"]);
     ///  ```
-    pub fn split_array(token: &String) -> Vec<String> {
+    pub fn split_array(token: &str) -> Vec<String> {
         let mut res: Vec<String> = Vec::new();
         let mut curr = String::new();
         let mut quotes = false;
@@ -33,15 +33,13 @@ pub mod type_checker {
                     res.push(curr);
                     curr = String::new();
                 }
-            } else {
-                if !quotes && characters[i] != ',' && characters[i] != ' ' {
-                    curr.push(characters[i]);
-                } else if !quotes && characters[i] == ',' && !curr.is_empty() {
-                    res.push(curr);
-                    curr = String::new();
-                } else if quotes {
-                    curr.push(characters[i]);
-                }
+            } else if !quotes && characters[i] != ',' && characters[i] != ' ' {
+                curr.push(characters[i]);
+            } else if !quotes && characters[i] == ',' && !curr.is_empty() {
+                res.push(curr);
+                curr = String::new();
+            } else if quotes {
+                curr.push(characters[i]);
             }
         }
 
@@ -52,40 +50,40 @@ pub mod type_checker {
         res
     }
 
-    pub fn check_int_literal(token: &String) -> bool {
+    pub fn check_int_literal(token: &str) -> bool {
         for character in token.chars() {
-            if !character.is_digit(10) {
+            if !character.is_ascii_digit() {
                 return false;
             }
         }
         true
     }
 
-    pub fn check_string_literal(token: &String) -> bool {
+    pub fn check_string_literal(token: &str) -> bool {
         token.starts_with("'") && token.ends_with("'")
     }
 
-    pub fn check_operator(token: &String) -> bool {
-        OPERATORS.contains(&token.as_str())
+    pub fn check_operator(token: &str) -> bool {
+        OPERATORS.contains(&token)
     }
 
-    pub fn check_binop(token: &String) -> bool {
-        BINOPS.contains(&token.as_str())
+    pub fn check_binop(token: &str) -> bool {
+        BINOPS.contains(&token)
     }
 
-    pub fn check_unop(token: &String) -> bool {
-        UNOPS.contains(&token.as_str())
+    pub fn check_unop(token: &str) -> bool {
+        UNOPS.contains(&token)
     }
 
-    pub fn check_identifier(token: &String) -> bool {
-        check_int_literal(&token) || check_string_literal(&token) || !check_operator(token)
+    pub fn check_identifier(token: &str) -> bool {
+        check_int_literal(token) || check_string_literal(token) || !check_operator(token)
     }
 
-    pub fn check_field(token: &String) -> bool {
-        !(check_int_literal(&token) || check_string_literal(&token) || check_operator(&token))
+    pub fn check_field(token: &str) -> bool {
+        !(check_int_literal(token) || check_string_literal(token) || check_operator(token))
     }
 
-    pub fn check_array(token: &String) -> bool {
+    pub fn check_array(token: &str) -> bool {
         token.starts_with("[") && token.ends_with("]")
     }
 

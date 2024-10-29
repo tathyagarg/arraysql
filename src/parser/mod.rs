@@ -24,6 +24,12 @@ pub struct Parser {
     pub step: Step,
 }
 
+impl Default for Parser {
+    fn default() -> Self {
+        Parser::new()
+    }
+}
+
 impl Parser {
     pub fn new() -> Parser {
         Parser {

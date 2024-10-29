@@ -10,7 +10,7 @@ fn test_mode() {
     )
     .parse();
 
-    assert_eq!(p.query_data.modes, vec![Mode::FREAD, Mode::FADD]);
+    assert_eq!(p.query_data.modes, vec![Mode::Fread, Mode::Fadd]);
 }
 
 #[test]
@@ -23,7 +23,7 @@ fn test_single_mode() {
     )
     .parse();
 
-    assert_eq!(p.query_data.modes, vec![Mode::FREAD,]);
+    assert_eq!(p.query_data.modes, vec![Mode::Fread,]);
 }
 
 #[test]

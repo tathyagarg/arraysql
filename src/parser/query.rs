@@ -53,10 +53,10 @@ pub enum Expression {
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Mode {
-    FADD,
-    FREAD,
-    FDELETE,
-    LMEM,
+    Fadd,
+    Fread,
+    Fdelete,
+    Lmem,
 }
 
 #[derive(Debug, Eq, PartialEq)]
