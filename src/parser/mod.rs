@@ -47,6 +47,7 @@ impl Parser {
                 inserted_field: Vec::new(),
                 read_fields: Vec::new(),
                 conditions: Expression::None,
+                conditions_buf: Expression::None,
             },
             step: Step::Start,
         }

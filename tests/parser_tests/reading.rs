@@ -1,6 +1,6 @@
 use maybe_sql::parser::{
     self,
-    query::{BinaryOperation, Expression, Identifier, QueryType},
+    query::{BinaryOperation, Expression, Identifier, QueryType, UnaryOperation},
 };
 
 #[test]
@@ -46,7 +46,7 @@ fn test_multiple_field() {
 fn test_where() {
     let mut p = parser::Parser::new();
     p.set_query(
-        "READ STRUCTURED (name, age, known_languages) ON users ON my_database WHERE age >= 13;"
+        "READ STRUCTURED (name, age, known_languages) ON users ON my_database WHERE (age >= 13);"
             .to_string(),
     )
     .parse();
@@ -58,6 +58,79 @@ fn test_where() {
             Box::new((
                 Expression::Identifier(Identifier::Field("age".to_string())),
                 Expression::Identifier(Identifier::IntLiteral(13))
+            ))
+        )
+    );
+}
+
+#[test]
+fn test_where_advanced() {
+    let mut p = parser::Parser::new();
+    p.set_query(
+        "READ STRUCTURED (name, age) ON users ON my_database WHERE (age >= 13 AND EXISTS name);"
+            .to_string(),
+    )
+    .parse();
+
+    assert_eq!(
+        p.query_data.conditions,
+        Expression::Binary(
+            BinaryOperation::And,
+            Box::new((
+                Expression::Binary(
+                    BinaryOperation::GreaterThanEqualTo,
+                    Box::new((
+                        Expression::Identifier(Identifier::Field("age".to_string())),
+                        Expression::Identifier(Identifier::IntLiteral(13))
+                    ))
+                ),
+                Expression::Unary(
+                    UnaryOperation::Exists,
+                    Box::new(Expression::Identifier(Identifier::Field(
+                        "name".to_string()
+                    )))
+                )
+            ))
+        )
+    );
+
+    p.reset();
+    p.set_query(
+        "READ STRUCTURED (name, age) ON users ON my_database WHERE (EXISTS name AND age >= 13 OR age < 3);"
+            .to_string(),
+    )
+    .parse();
+
+    assert_eq!(
+        p.query_data.conditions,
+        Expression::Binary(
+            BinaryOperation::And,
+            Box::new((
+                Expression::Unary(
+                    UnaryOperation::Exists,
+                    Box::new(Expression::Identifier(Identifier::Field(
+                        "name".to_string()
+                    )))
+                ),
+                Expression::Binary(
+                    BinaryOperation::Or,
+                    Box::new((
+                        Expression::Binary(
+                            BinaryOperation::GreaterThanEqualTo,
+                            Box::new((
+                                Expression::Identifier(Identifier::Field("age".to_string())),
+                                Expression::Identifier(Identifier::IntLiteral(13))
+                            ))
+                        ),
+                        Expression::Binary(
+                            BinaryOperation::LesserThan,
+                            Box::new((
+                                Expression::Identifier(Identifier::Field("age".to_string())),
+                                Expression::Identifier(Identifier::IntLiteral(3))
+                            ))
+                        )
+                    )),
+                )
             ))
         )
     );

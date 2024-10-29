@@ -110,9 +110,10 @@ pub const DATATYPES: &[&str] = &[
 ];
 
 pub const OPERATORS: &[&str] = &[
-    ABS, NEG, NOT, BWNOT, EXISTS, ADD, SUB, MUL, DIV, EQ, NE, GE, LE, GT, LT,
+    ABS, NEG, NOT, BWNOT, EXISTS, ADD, SUB, MUL, DIV, EQ, NE, GE, LE, GT, LT, AND, OR,
 ];
 
 pub const BINOPS: &[&str] = &[ADD, SUB, MUL, DIV, EQ, NE, GE, LE, GT, LT];
+pub const CONNECTORS: &[&str] = &[AND, OR];
 
 pub const UNOPS: &[&str] = &[ABS, NEG, NOT, BWNOT, EXISTS];

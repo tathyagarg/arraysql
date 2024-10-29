@@ -9,15 +9,11 @@ pub fn inserting(parser: &mut Parser, step: Step) -> Step {
     match step {
         Step::InsertValueIdentifier => {
             let token = parser.peek();
-            println!("{}", token);
             let token = parser.pop_string_or_identifier();
-            println!("{}", token);
             parser
                 .query_data
                 .inserted_value
                 .push(type_checker::as_identifier(&token));
-
-            println!("{}", parser.peek());
 
             match parser.peek().as_str() {
                 CLOSE_PAREN => {

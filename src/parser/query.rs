@@ -32,6 +32,8 @@ pub enum BinaryOperation {
     LesserThanEqualTo,
     GreaterThan,
     LesserThan,
+    And,
+    Or,
 }
 
 #[derive(Debug, Hash, Eq, PartialEq, Clone)]
@@ -97,6 +99,7 @@ pub struct Query {
     // ============ Reading ============
     pub read_fields: Vec<Identifier>,
     pub conditions: Expression,
+    pub conditions_buf: Expression,
 }
 
 pub fn string_to_unop(token: &String) -> UnaryOperation {
@@ -122,6 +125,8 @@ pub fn string_to_binop(token: &String) -> BinaryOperation {
         LE => BinaryOperation::LesserThanEqualTo,
         GT => BinaryOperation::GreaterThan,
         LT => BinaryOperation::LesserThan,
+        AND => BinaryOperation::And,
+        OR => BinaryOperation::Or,
         _ => panic!("Expected binary operation, found {}", token),
     }
 }
