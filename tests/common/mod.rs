@@ -6,5 +6,13 @@ pub fn ensure_db_existance(db_name: &str) -> bool {
 }
 
 pub fn remove_db(db_name: &str) -> Result<(), std::io::Error> {
-    fs::remove_dir(db_name)
+    fs::remove_dir_all(db_name)
+}
+
+pub fn soft_remove_db(db_name: &str) -> Result<(), std::io::Error> {
+    if !ensure_db_existance(db_name) {
+        Ok(())
+    } else {
+        remove_db(db_name)
+    }
 }

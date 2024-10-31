@@ -6,6 +6,7 @@ pub fn engine(parser: &Parser) -> Result<(), std::io::Error> {
     match parser.query_data._type {
         QueryType::None => panic!("No query type in query data."),
         QueryType::DatabaseCreation => create::database::create_database(parser),
+        QueryType::TableCreation => create::table::create_table(parser),
         _ => Ok(()),
     }
 }
