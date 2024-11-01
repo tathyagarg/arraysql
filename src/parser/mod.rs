@@ -77,6 +77,7 @@ impl Parser {
     }
 
     pub fn parse(&mut self) {
+        println!("{} {}", self.query, self.location);
         let (mut curr, func): (Step, fn(&mut Parser, Step) -> Step) = match self.pop().as_str() {
             DATABASE => {
                 self.query_data._type = QueryType::DatabaseCreation;
